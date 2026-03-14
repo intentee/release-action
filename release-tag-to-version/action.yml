@@ -9,6 +9,8 @@ outputs:
     value: ${{ steps.tag-type.outputs.tag-type }}
   version:
     value: ${{ steps.set-release-version.outputs.release-version }}
+  name:
+    value: ${{ steps.tag-message.outputs.name }}
   description:
     value: ${{ steps.tag-message.outputs.description }}
 
@@ -54,7 +56,10 @@ runs:
     - name: Extract tag message
       id: tag-message
       run: |
-        DESCRIPTION=$(git tag -l --format='%(contents)' "$RELEASE_TAG")
+        NAME=$(git tag -l --format='%(contents:subject)' "$RELEASE_TAG")
+        DESCRIPTION=$(git tag -l --format='%(contents:body)' "$RELEASE_TAG")
+
+        echo "name=${NAME}" >> $GITHUB_OUTPUT
 
         {
           echo "description<<EOF"
