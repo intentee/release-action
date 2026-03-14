@@ -9,6 +9,8 @@ outputs:
     value: ${{ steps.tag-type.outputs.tag-type }}
   version:
     value: ${{ steps.set-release-version.outputs.release-version }}
+  description:
+    value: ${{ steps.tag-message.outputs.description }}
 
 runs:
   using: "composite"
@@ -39,6 +41,26 @@ runs:
         fi
 
         echo "release-version=${VERSION}" >> $GITHUB_OUTPUT
+      env:
+        RELEASE_TAG: ${{ inputs.release-tag }}
+      shell: bash
+
+    - name: Fetch annotated tag
+      run: git fetch origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}" --force
+      env:
+        RELEASE_TAG: ${{ inputs.release-tag }}
+      shell: bash
+
+    - name: Extract tag message
+      id: tag-message
+      run: |
+        DESCRIPTION=$(git tag -l --format='%(contents)' "$RELEASE_TAG")
+
+        {
+          echo "description<<EOF"
+          echo "$DESCRIPTION"
+          echo "EOF"
+        } >> $GITHUB_OUTPUT
       env:
         RELEASE_TAG: ${{ inputs.release-tag }}
       shell: bash
