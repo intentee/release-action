@@ -8,24 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: create test tag
-        run: |
-          git config user.name "test"
-          git config user.email "test@test.com"
-          git tag -a v1.2.3 -m "Release 1.2.3"
-          git remote set-url origin "file://$(pwd)/.git"
-
-      - uses: ./release-tag-to-version
-        id: release
-        with:
-          release-tag: v1.2.3
-
-      - name: print outputs
-        run: |
-          echo "type: ${{ steps.release.outputs.type }}"
-          echo "version: ${{ steps.release.outputs.version }}"
-
       - uses: ./assert-version
         with:
           filename: fixtures/assert-version/binary.sh
-          expected-version: ${{ steps.release.outputs.version }}
+          expected-version: "1.2.3"

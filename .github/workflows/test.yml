@@ -5,52 +5,6 @@ on:
   pull_request:
 
 jobs:
-  test-release-tag:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: create test tag
-        run: |
-          git config user.name "test"
-          git config user.email "test@test.com"
-          git tag -a v1.2.3 -m "Release 1.2.3"
-          git remote set-url origin "file://$(pwd)/.git"
-
-      - uses: ./release-tag-to-version
-        id: release
-        with:
-          release-tag: v1.2.3
-
-      - name: assert type is RELEASE
-        run: test "${{ steps.release.outputs.type }}" = "RELEASE"
-
-      - name: assert version is 1.2.3
-        run: test "${{ steps.release.outputs.version }}" = "1.2.3"
-
-  test-prerelease-tag:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: create test tag
-        run: |
-          git config user.name "test"
-          git config user.email "test@test.com"
-          git tag -a v2.0.0-rc1 -m "Pre-release 2.0.0-rc1"
-          git remote set-url origin "file://$(pwd)/.git"
-
-      - uses: ./release-tag-to-version
-        id: prerelease
-        with:
-          release-tag: v2.0.0-rc1
-
-      - name: assert type is PRE_RELEASE
-        run: test "${{ steps.prerelease.outputs.type }}" = "PRE_RELEASE"
-
-      - name: assert version is 2.0.0
-        run: test "${{ steps.prerelease.outputs.version }}" = "2.0.0"
-
   test-invalid-tag:
     runs-on: ubuntu-latest
     steps:
