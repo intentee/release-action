@@ -1,0 +1,42 @@
+name: Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: "Release tag to process (e.g. v1.0.0)"
+        required: true
+
+jobs:
+  release-tag-to-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: setup local origin for act
+        if: env.ACT == 'true'
+        run: |
+          git config user.name "test"
+          git config user.email "test@test.com"
+          git tag -a ${{ inputs.release-tag }} -m "${{ inputs.release-tag }}" || true
+          git clone --bare . /tmp/origin.git
+          git remote set-url origin /tmp/origin.git
+
+      - uses: ./release-tag-to-version
+        id: release
+        with:
+          release-tag: ${{ inputs.release-tag }}
+
+      - name: print outputs
+        run: |
+          echo "type: ${{ steps.release.outputs.type }}"
+          echo "version: ${{ steps.release.outputs.version }}"
+          echo "name: ${{ steps.release.outputs.name }}"
+          echo "description: ${{ steps.release.outputs.description }}"
+
+      - uses: ./assert-version
+        with:
+          filename: fixtures/assert-version/binary.sh
+          expected-version: ${{ steps.release.outputs.version }}
