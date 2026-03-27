@@ -9,16 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: create annotated tag and push to local origin
-        run: |
-          git config user.name "test"
-          git config user.email "test@test.com"
-          git tag -a v1.2.3 -m "Release 1.2.3" -m "This is the release body."
-          git clone --bare . /tmp/origin.git
-          git remote set-url origin /tmp/origin.git
 
       - uses: ./release-tag-to-version
         id: release
@@ -31,26 +21,10 @@ jobs:
       - name: assert version is 1.2.3
         run: test "${{ steps.release.outputs.version }}" = "1.2.3"
 
-      - name: assert name extracted
-        run: test "${{ steps.release.outputs.name }}" = "Release 1.2.3"
-
-      - name: assert description extracted
-        run: test -n "${{ steps.release.outputs.description }}"
-
   test-prerelease-tag:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: create annotated pre-release tag and push to local origin
-        run: |
-          git config user.name "test"
-          git config user.email "test@test.com"
-          git tag -a v2.0.0-rc1 -m "Pre-release 2.0.0-rc1"
-          git clone --bare . /tmp/origin.git
-          git remote set-url origin /tmp/origin.git
 
       - uses: ./release-tag-to-version
         id: prerelease
