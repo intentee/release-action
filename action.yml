@@ -1,0 +1,76 @@
+name: release
+
+inputs:
+  release-tag:
+    required: true
+    description: "Git tag (e.g., v1.2.3 or v1.2.3-rc1)"
+
+  binary-path:
+    required: false
+    description: "Path to the built binary. Renames it to artifact-name and asserts its version."
+
+  artifact-name:
+    required: false
+    description: "Artifact name. Required when binary-path is provided."
+
+  create-release:
+    required: false
+    default: "false"
+    description: "Download all artifacts and create a GitHub release."
+
+outputs:
+  type:
+    value: ${{ steps.release-version.outputs.type }}
+  version:
+    value: ${{ steps.release-version.outputs.version }}
+  name:
+    value: ${{ steps.release-version.outputs.name }}
+  description:
+    value: ${{ steps.release-version.outputs.description }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: release-version
+      uses: ./release-tag-to-version
+      with:
+        release-tag: ${{ inputs.release-tag }}
+
+    - name: rename binary
+      if: ${{ inputs.binary-path != '' }}
+      run: mv "$BINARY_PATH" "./$ARTIFACT_NAME"
+      env:
+        BINARY_PATH: ${{ inputs.binary-path }}
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+      shell: bash
+
+    - name: assert binary version
+      if: ${{ inputs.binary-path != '' }}
+      uses: ./assert-version
+      with:
+        filename: "./${{ inputs.artifact-name }}"
+        expected-version: ${{ steps.release-version.outputs.version }}
+
+    - name: upload artifact
+      if: ${{ inputs.binary-path != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ./${{ inputs.artifact-name }}
+
+    - name: download all artifacts
+      if: ${{ inputs.create-release == 'true' }}
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+
+    - name: create release
+      if: ${{ inputs.create-release == 'true' }}
+      uses: softprops/action-gh-release@v2
+      with:
+        files: artifacts/*
+        name: ${{ steps.release-version.outputs.name }}
+        body: ${{ steps.release-version.outputs.description }}
+        prerelease: ${{ steps.release-version.outputs.type == 'PRE_RELEASE' }}
+        tag_name: ${{ inputs.release-tag }}
